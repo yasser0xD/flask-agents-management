@@ -32,8 +32,8 @@ def get_db_connection():
     connection = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="Pinson25@",
-        database="pinson_travel"
+        password="example",
+        database="example"
     )
     return connection, connection.cursor(dictionary=True)
 
@@ -113,7 +113,6 @@ def logout():
 def dashboard():
     db, cursor = get_db_connection()
 
-    # إجماليات عامة
     cursor.execute("SELECT COUNT(*) AS total_clients FROM clients")
     total_clients = cursor.fetchone()['total_clients']
 
@@ -132,7 +131,7 @@ def dashboard():
     cursor.execute("SELECT IFNULL(SUM(profit_amount), 0) AS total_profit FROM clients")
     total_profit = cursor.fetchone()['total_profit']
 
-    # الإحصائيات الجديدة
+
     cursor.execute("SELECT COUNT(*) AS new_clients FROM clients WHERE created_at >= CURDATE() - INTERVAL 7 DAY")
     new_clients = cursor.fetchone()['new_clients']
 
@@ -148,14 +147,14 @@ def dashboard():
     cursor.execute("SELECT COUNT(*) AS family_clients FROM clients WHERE client_type = 'عائلي'")
     family_clients = cursor.fetchone()['family_clients']
 
-    # توزيع أنواع الفيزا
+    
     cursor.execute("SELECT visa_type, COUNT(*) AS count FROM clients GROUP BY visa_type")
     visa_type_stats = cursor.fetchall()
 
     cursor.execute("SELECT client_type, COUNT(*) AS count FROM clients GROUP BY client_type")
     client_type_stats = cursor.fetchall()
 
-    # العملاء الجدد
+
     cursor.execute("""
         SELECT c.id, c.full_name, c.amount_paid, c.visa_type,
                co.name AS country_name, co.flag_filename, c.created_at
@@ -166,7 +165,7 @@ def dashboard():
     """)
     recent_clients_list = cursor.fetchall()
 
-    # العملاء الذين يقترب موعد دفعهم
+   
     cursor.execute("""
         SELECT c.id, c.full_name, c.file_payment_date, 
                co.name AS country_name, co.flag_filename
@@ -214,7 +213,7 @@ def dashboard():
         single_clients=single_clients,
         family_clients=family_clients,
         upcoming_payment_clients=upcoming_payment_clients,
-        country_stats=country_stats  # << الإحصائيات الجديدة
+        country_stats=country_stats 
     )
 
 
@@ -305,7 +304,7 @@ def clients_by_countries(country_id):
     offset = (page - 1) * per_page
     search = request.args.get('search', '').strip()
 
-    # جلب بيانات الدولة
+    
     cursor.execute("SELECT name, flag_filename FROM countries WHERE id = %s", (country_id,))
     countries = cursor.fetchone()
 
@@ -317,7 +316,6 @@ def clients_by_countries(country_id):
 
     like_pattern = f"%{search.lower()}%" if search else None
 
-    # عدد العملاء
     if search:
         cursor.execute("""
             SELECT COUNT(*) AS count FROM clients
@@ -331,7 +329,7 @@ def clients_by_countries(country_id):
     total_clients = cursor.fetchone()['count']
     total_pages = (total_clients + per_page - 1) // per_page
 
-    # العملاء
+ 
     selected_fields = """
         id, full_name, client_type, visa_type,
         created_at, file_payment_date, amount_paid, amount_due
@@ -364,7 +362,7 @@ def clients_by_countries(country_id):
 
     clients = cursor.fetchall()
 
-    # الوسطاء المرتبطين بهذه الدولة
+   
     cursor.execute("""
         SELECT id, name
         FROM agents
@@ -379,7 +377,7 @@ def clients_by_countries(country_id):
         'clients_by_countries.html',
         countries=countries,
         clients=clients,
-        agents=agents,  # 👈 الآن الوسطاء متاحين في الصفحة
+        agents=agents,  
         current_page=page,
         total_pages=total_pages,
         country_id=country_id,
@@ -399,7 +397,7 @@ def client_details(client_id):
     db, cursor = get_db_connection()
 
     try:
-        # جلب بيانات العميل مع اسم المستخدم الذي أضافه
+
         cursor.execute("""
             SELECT clients.*, users.username AS added_by
             FROM clients
@@ -411,11 +409,11 @@ def client_details(client_id):
         if not client:
             return "العميل غير موجود", 404
 
-        # جلب الوثائق
+
         cursor.execute("SELECT * FROM documents WHERE client_id = %s", (client_id,))
         documents = cursor.fetchall()
 
-        # جلب أفراد العائلة إذا كان العميل عائلي
+
         family_members = []
         if client['client_type'] == 'family':
             cursor.execute("""
@@ -425,7 +423,7 @@ def client_details(client_id):
             """, (client_id,))
             family_members = cursor.fetchall()
 
-        # تمرير كل البيانات إلى القالب
+
         return render_template(
             'client_details.html',
             client=client,
@@ -462,7 +460,7 @@ def countries():
         db.close()
 
 
-# Route: Add Countries
+
 @app.route('/add-countries', methods=['GET', 'POST'])
 @login_required
 def add_countries():
@@ -503,7 +501,7 @@ import os
 @login_required
 def add_agent():
     name = request.form['name']
-    email = request.form['email']   # ✅ استبدل phone بـ email
+    email = request.form['email']   
     country_id = request.form.get('country_id') or None
 
     db, cursor = get_db_connection()
@@ -547,7 +545,7 @@ def send_to_agent():
     agent_id = request.form['agent_id']
     comment = request.form['comment']
 
-    # جلب بيانات العميل والوسيط
+   
     db, cursor = get_db_connection()
     cursor.execute("SELECT full_name FROM clients WHERE id=%s", (client_id,))
     client = cursor.fetchone()
@@ -558,9 +556,9 @@ def send_to_agent():
     cursor.close()
     db.close()
 
-    # إعداد البريد
-    sender_email = "pinson.travel@gmail.com"
-    sender_password = "yusr xnat qfhz wvuk"
+
+    sender_email = "yasser.debh@gmail.com"
+    sender_password = "example"
     receiver_email = agent['email']
 
     subject = f"Dossier client : {client.get('full_name', 'Nom du client')}"
@@ -588,8 +586,6 @@ def send_to_agent():
     msg['Subject'] = subject
 
     msg.attach(MIMEText(body, 'plain'))
-
-    # 📂 إرفاق الملفات من مجلد العميل
     client_folder = os.path.join(app.config['UPLOAD_FOLDER'], client['full_name'].upper().replace(" ", "_"))
     if os.path.exists(client_folder):
         for filename in os.listdir(client_folder):
@@ -599,7 +595,6 @@ def send_to_agent():
                 part['Content-Disposition'] = f'attachment; filename="{filename}"'
                 msg.attach(part)
 
-    # ✉️ إرسال البريد عبر Gmail
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
@@ -610,7 +605,6 @@ def send_to_agent():
     except Exception as e:
         flash(f"فشل إرسال البريد: {str(e)}", "danger")
 
-    # 👇 go back to the same page instead of agents
     return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/agents/delete/<int:agent_id>', methods=['POST'])
@@ -664,7 +658,6 @@ def upload_documents():
 def delete_document(doc_id):
     db, cursor = get_db_connection()
     try:
-        # استرجاع اسم الملف من قاعدة البيانات أولاً
         cursor.execute("SELECT filename FROM documents WHERE id = %s", (doc_id,))
         result = cursor.fetchone()
 
@@ -673,7 +666,7 @@ def delete_document(doc_id):
             if os.path.exists(filepath):
                 os.remove(filepath)
 
-        # حذف السجل من قاعدة البيانات
+
         cursor.execute("DELETE FROM documents WHERE id = %s", (doc_id,))
         db.commit()
 
@@ -697,19 +690,19 @@ def update_client(client_id):
         phone = request.form.get('phone')
         amount_due = request.form.get('amount_due') or 0
         amount_paid = request.form.get('amount_paid') or 0
-        profit_amount = request.form.get('profit_amount') or 0  # ✅ سطر مضاف
+        profit_amount = request.form.get('profit_amount') or 0  
         comments = request.form.get('comments', '')
 
         cursor.execute("""
             UPDATE clients 
             SET email = %s, phone = %s, 
                 amount_due = %s, amount_paid = %s, 
-                profit_amount = %s,                  -- ✅ مضاف هنا
+                profit_amount = %s,                
                 comments = %s
             WHERE id = %s
         """, (
             email, phone, amount_due, amount_paid, 
-            profit_amount,                       # ✅ مضاف هنا
+            profit_amount,                       
             comments, client_id
         ))
         db.commit()
@@ -729,7 +722,7 @@ def update_client(client_id):
 def delete_client(client_id):
     db, cursor = get_db_connection()
     try:
-        # حذف الملفات المرتبطة
+       
         cursor.execute("SELECT filename FROM documents WHERE client_id = %s", (client_id,))
         docs = cursor.fetchall()
         for doc in docs:
@@ -737,10 +730,10 @@ def delete_client(client_id):
             if os.path.exists(filepath):
                 os.remove(filepath)
 
-        # حذف أفراد العائلة
+      
         cursor.execute("DELETE FROM family_members WHERE client_id = %s", (client_id,))
 
-        # حذف الوثائق والعميل
+        
         cursor.execute("DELETE FROM documents WHERE client_id = %s", (client_id,))
         cursor.execute("DELETE FROM clients WHERE id = %s", (client_id,))
         db.commit()
