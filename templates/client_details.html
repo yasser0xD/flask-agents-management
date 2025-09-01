@@ -1,0 +1,252 @@
+{% extends "layout.html" %}
+{% block title %}تفاصيل العميل{% endblock %}
+
+{% block content %}
+<div class="max-w-screen-xl mx-auto px-4 py-8 space-y-8" dir="rtl">
+
+    <!-- عنوان الصفحة + المستخدم الذي أضاف العميل -->
+    <div class="flex items-center justify-between border-b pb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ client.full_name | upper }}</h1>
+            <p class="text-sm text-gray-500 mt-1">أضيف بواسطة: {{ client.added_by or "غير معروف" }}</p>
+        </div>
+        <button onclick="toggleModal(true)" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">
+            ✏️ تعديل البيانات
+        </button>
+    </div>
+
+    <!-- معلومات العميل الأساسية -->
+    <div class="bg-white rounded-xl shadow p-6 space-y-4">
+        <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">المعلومات الأساسية</h2>
+        <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 text-gray-800 text-md">
+            <div><strong>البريد الإلكتروني:</strong> {{ client.email or 'غير متوفر' }}</div>
+            <div><strong>رقم الهاتف:</strong> {{ client.phone or 'غير متوفر' }}</div>
+            <div><strong>تاريخ الإضافة:</strong> {{ client.created_at.strftime('%Y-%m-%d') }}</div>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-6 text-md pt-4 border-t pt-4">
+            <div><strong>المبلغ الإجمالي:</strong> {{ client.amount_due or 0 }} دج</div>
+            <div><strong>المدفوع:</strong> {{ client.amount_paid or 0 }} دج</div>
+            <div>
+                <strong>المتبقي:</strong>
+                {{ (client.amount_due - client.amount_paid) if client.amount_due and client.amount_paid else 0 }} دج
+            </div>
+            <div><strong>الربح:</strong> {{ client.profit_amount or 0 }} دج</div>
+
+        </div>
+
+        <div class="pt-2 text-md">
+            <strong>الحالة:</strong>
+            {% if client.amount_paid >= client.amount_due %}
+                <span class="text-green-600 font-bold">تم الدفع</span>
+            {% else %}
+                <span class="text-red-600 font-bold">غير مدفوع</span>
+            {% endif %}
+        </div>
+
+        <div class="pt-2">
+            <strong>ملاحظات:</strong>
+            <p class="text-gray-600 mt-1">{{ client.comments or 'لا توجد ملاحظات' }}</p>
+        </div>
+    </div>
+    
+{% if client.client_type == 'family' and family_members %}
+<div class="bg-white rounded-xl shadow p-6 space-y-4">
+    <h2 class="text-xl font-semibold text-gray-700 border-b pb-2">أفراد العائلة</h2>
+    <table class="w-full table-auto text-right">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="px-4 py-2">الاسم الكامل</th>
+                <th class="px-4 py-2">قاصر</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in family_members %}
+            <tr class="border-t">
+                <td class="px-4 py-2">{{ member.full_name }}</td>
+                <td class="px-4 py-2">
+                    {% if member.is_child %} نعم{% else %} لا{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+
+    <!-- قسم المستندات -->
+    <div class="bg-white rounded-xl shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-gray-700">الوثائق</h2>
+            <button onclick="toggleUploadModal(true)" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm">
+                📎 إضافة وثائق
+            </button>
+        </div>
+        {% if documents %}
+        <ul class="space-y-2">
+            {% for doc in documents %}
+            <li class="flex justify-between items-center bg-gray-50 border rounded px-4 py-2">
+                <span class="truncate">{{ doc.filename.split('/')[-1] }}</span>
+                <div class="flex gap-2">
+                    <a href="{{ url_for('uploaded_file', filename=doc.filename) }}" target="_blank"
+                       class="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 text-sm">عرض / تحميل</a>
+                    <button onclick="deleteDocument('{{ doc.id }}', this)"
+                            class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 text-sm">
+                        🗑 حذف
+                    </button>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-500">لا توجد وثائق مرفقة.</p>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('clients_by_countries', country_id=client.country_id) }}"
+       class="inline-block text-sm text-gray-600 hover:text-gray-800 mt-6">← عودة إلى قائمة العملاء</a>
+
+</div>
+
+<!-- Modal تعديل بيانات العميل -->
+<div id="editModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-bold text-blue-700">تعديل بيانات العميل</h3>
+            <button onclick="toggleModal(false)" class="text-xl text-gray-500 hover:text-red-600">&times;</button>
+        </div>
+        <form id="editClientForm" class="mt-4 space-y-4">
+            <input type="hidden" name="client_id" value="{{ client.id }}">
+
+            <div>
+                <label class="block mb-1 font-medium">البريد الإلكتروني</label>
+                <input type="email" name="email" value="{{ client.email }}" class="w-full border rounded px-3 py-2">
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium">رقم الهاتف</label>
+                <input type="text" name="phone" value="{{ client.phone }}" class="w-full border rounded px-3 py-2">
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block mb-1 font-medium">المبلغ الإجمالي</label>
+                    <input type="number" step="1000" name="amount_due" value="{{ client.amount_due or 0 }}" class="w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block mb-1 font-medium">المبلغ المدفوع</label>
+                    <input type="number" step="1000" name="amount_paid" value="{{ client.amount_paid or 0 }}" class="w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                     <label class="block mb-1 font-medium">الربح</label>
+                     <input type="number" step="1000" name="profit_amount" value="{{ client.profit_amount or 0 }}" class="w-full border rounded px-3 py-2">
+                </div>
+            </div>
+
+            <div>
+                <label class="block mb-1 font-medium">ملاحظات</label>
+                <textarea name="comments" rows="3" class="w-full border rounded px-3 py-2">{{ client.comments }}</textarea>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="toggleModal(false)" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">إلغاء</button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">💾 حفظ التغييرات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal رفع الوثائق -->
+<div id="uploadModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-lg font-bold text-green-700">رفع وثائق جديدة</h3>
+            <button onclick="toggleUploadModal(false)" class="text-xl text-gray-500 hover:text-red-600">&times;</button>
+        </div>
+        <form id="uploadForm" enctype="multipart/form-data" class="mt-4 space-y-4">
+            <input type="hidden" name="client_id" value="{{ client.id }}">
+            <input type="file" name="documents" multiple required class="w-full border rounded px-3 py-2">
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="toggleUploadModal(false)" class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">إلغاء</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">📤 رفع</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleModal(show) {
+        const modal = document.getElementById('editModal');
+        modal.classList.toggle('hidden', !show);
+        modal.classList.toggle('flex', show);
+    }
+
+    function toggleUploadModal(show) {
+        const modal = document.getElementById('uploadModal');
+        modal.classList.toggle('hidden', !show);
+        modal.classList.toggle('flex', show);
+    }
+
+    function deleteDocument(docId, buttonElement) {
+        if (!confirm('هل أنت متأكد من حذف هذا الملف؟')) return;
+
+        fetch(`/delete-document/${docId}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const li = buttonElement.closest('li');
+                if (li) li.remove();
+            } else {
+                alert('فشل الحذف: ' + data.message);
+            }
+        })
+        .catch(() => alert('حدث خطأ في الاتصال بالخادم'));
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(uploadForm);
+                fetch('/upload-documents', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toggleUploadModal(false);
+                        location.reload();
+                    } else {
+                        alert('خطأ أثناء الرفع: ' + data.message);
+                    }
+                });
+            });
+        }
+
+        const editForm = document.getElementById('editClientForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const clientId = editForm.querySelector('input[name="client_id"]').value;
+                const formData = new URLSearchParams(new FormData(editForm));
+                fetch(`/update-client/${clientId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toggleModal(false);
+                        location.reload();
+                    } else {
+                        alert('خطأ أثناء الحفظ: ' + data.message);
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

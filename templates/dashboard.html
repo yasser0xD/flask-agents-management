@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+{% block content %}
+<div class="p-6 space-y-6">
+
+  <!-- الشبكة الرئيسية -->
+  <div class="flex flex-col md:flex-row gap-6">
+    <!-- البطاقات عموديًا في شاشة صغيرة وأفقياً في كبيرة -->
+    <div class="flex-1 space-y-4">
+      {% for item in [
+        ('إجمالي العملاء', total_clients, '', 'text-gray-600'),
+        ('المدفوعات', total_paid ~ ' د.ج', 'text-green-600', ''),
+        ('المتبقي', total_unpaid ~ ' د.ج', 'text-red-600', ''),
+        ('الربح', total_profit ~ ' د.ج', 'text-blue-600', '')
+      ] %}
+      <div class="bg-white rounded-xl shadow p-3 text-center h-[80px] flex flex-col justify-center">
+        <div class="text-sm text-gray-600">{{ item[0] }}</div>
+        <div class="text-lg font-bold {{ item[2] }}">{{ item[1] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- الرسم البياني بجانب البطاقات -->
+    <div class="flex-1 bg-white rounded-xl shadow px-4 pt-4 pb-1 flex flex-col justify-start" style="min-height: 320px; max-height: 330px;">
+      <h2 class="text-lg font-semibold text-center mb-2">إحصائيات العملاء</h2>
+      <canvas id="clientsChart" height="140" style="max-height: 240px;"></canvas>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-4 mt-6 overflow-x-auto">
+  <h2 class="text-lg font-semibold text-center mb-2">عملاء اقترب موعد دفع ملفهم</h2>
+  {% if upcoming_payment_clients %}
+  <table class="w-full text-sm text-right text-gray-700">
+    <thead class="text-xs text-gray-500 border-b">
+      <tr>
+        <th class="px-4 py-2">الاسم</th>
+        <th class="px-4 py-2">الدولة</th>
+        <th class="px-4 py-2">تاريخ دفع الملف</th>
+        <th class="px-4 py-2">عرض التفاصيل</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for client in upcoming_payment_clients %}
+      <tr class="border-b">
+        <td class="px-4 py-2">{{ client.full_name }}</td>
+        <td class="px-4 py-2">
+          <div class="flex items-center justify-start space-x-2 space-x-reverse">
+            <span>{{ client.country_name }}</span>
+            <img src="{{ url_for('static', filename='flag/' ~ client.flag_filename) }}"
+                 class="w-5 h-4 rounded shadow"
+                 alt="علم {{ client.country_name }}">
+          </div>
+        </td>
+        <td class="px-4 py-2">{{ client.file_payment_date }}</td>
+        <td class="px-4 py-2">
+          <a href="{{ url_for('client_details', client_id=client.id) }}"
+             class="text-blue-600 hover:underline">عرض</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-center text-gray-500 mt-4">لا يوجد عملاء لديهم موعد دفع قريب.</p>
+  {% endif %}
+</div>
+
+<!-- إحصائيات حسب الدولة -->
+<div class="bg-white rounded-xl shadow p-4 mt-6 overflow-x-auto">
+  <h2 class="text-lg font-semibold text-center mb-2">إحصائيات حسب الدولة</h2>
+  <table class="w-full text-sm text-right text-gray-700">
+    <thead class="text-xs text-gray-500 border-b">
+      <tr>
+        <th class="px-4 py-2">الدولة</th>
+        <th class="px-4 py-2">مدفوع</th>
+        <th class="px-4 py-2">غير مدفوع</th>
+        <th class="px-4 py-2">الأرباح</th>
+        <th class="px-4 py-2">الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for country in country_stats %}
+      <tr class="border-b hover:bg-gray-50">
+        <td class="px-4 py-2 flex items-center gap-2">
+          <img src="{{ url_for('static', filename='flag/' ~ country.flag_filename) }}"
+               class="w-5 h-4 rounded shadow"
+               alt="علم {{ country.country_name }}">
+          {{ country.country_name }}
+        </td>
+        <td class="px-4 py-2 text-green-600 font-semibold">{{ country.total_paid }} د.ج</td>
+        <td class="px-4 py-2 text-red-600 font-semibold">{{ country.total_unpaid }} د.ج</td>
+        <td class="px-4 py-2 text-blue-600 font-semibold">{{ country.total_profit }} د.ج</td>
+        <td class="px-4 py-2 text-blue-600 font-semibold">{{ country.total_amount }} د.ج</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+  <!-- جدول آخر العملاء -->
+  <div class="bg-white rounded-xl shadow p-4 overflow-x-auto">
+    <h2 class="text-lg font-semibold text-center mb-4">آخر العملاء</h2>
+    <table class="w-full text-sm text-right text-gray-700 table-auto border border-gray-200 rounded-xl">
+      <thead class="text-xs text-gray-500 bg-gray-100">
+        <tr>
+          <th class="px-4 py-3">الاسم</th>
+          <th class="px-4 py-3">الدولة</th>
+          <th class="px-4 py-3">نوع الفيزا</th>
+          <th class="px-4 py-3">التاريخ</th>
+          <th class="px-4 py-3">عرض التفاصيل</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in recent_clients_list %}
+        <tr class="border-t hover:bg-gray-50">
+          <td class="px-4 py-3">{{ client.full_name }}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-start gap-2">
+              <span>{{ client.country_name }}</span>
+              <img src="{{ url_for('static', filename='flag/' ~ client.flag_filename) }}"
+                   class="w-5 h-4 rounded shadow"
+                   alt="علم {{ client.country_name }}">
+            </div>
+          </td>
+          <td class="px-4 py-3">{{ client.visa_type }}</td>
+          <td class="px-4 py-3">{{ client.created_at.strftime('%Y-%m-%d') }}</td>
+          <td class="px-4 py-3">
+            <a href="{{ url_for('client_details', client_id=client.id) }}"
+               class="text-blue-600 hover:underline">عرض</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('clientsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['جدد', 'سياحية', 'عمل', 'فردي', 'عائلي'],
+      datasets: [{
+        label: 'عدد العملاء',
+        data: [
+          {{ new_clients }},
+          {{ tourist_clients }},
+          {{ work_clients }},
+          {{ single_clients }},
+          {{ family_clients }}
+        ],
+        backgroundColor: [
+          '#60A5FA', '#34D399', '#FBBF24', '#F87171', '#A78BFA'
+        ],
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+      }
+    }
+  });
+</script>
+{% endblock %}

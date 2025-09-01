@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block title %}طلبات العملاء{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded shadow max-w-6xl mx-auto">
+
+  <h1 class="text-2xl font-bold text-center text-green-700 mb-6">قائمة طلبات العملاء من الموقع</h1>
+
+  <!-- شريط البحث (اختياري) -->
+  <form method="GET" action="{{ url_for('feedbacks') }}" class="mb-6 flex justify-end gap-2 text-sm">
+    <input type="text" name="search" placeholder="بحث بالاسم أو الهاتف..."
+           value="{{ request.args.get('search', '') }}"
+           class="border rounded px-3 py-2 w-full max-w-xs focus:outline-none focus:ring focus:border-blue-300">
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">🔍 بحث</button>
+  </form>
+
+  <!-- جدول الطلبات -->
+  <div class="overflow-x-auto rounded-lg shadow border border-gray-200">
+    <table class="min-w-full divide-y divide-gray-200 text-right">
+      <thead class="bg-gray-100 text-sm font-bold text-gray-700">
+        <tr>
+          <th class="px-4 py-3">الاسم</th>
+          <th class="px-4 py-3">رقم الهاتف</th>
+          <th class="px-4 py-3">الملف</th>
+          <th class="px-4 py-3">تاريخ الإرسال</th>
+          <th class="px-4 py-3">الإجراء</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 bg-white text-sm">
+        {% for f in feedbacks %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-semibold text-green-800">{{ f.name }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ f.phone }}</td>
+          <td class="px-4 py-3">
+            {% if f.file_path %}
+              <a href="{{ url_for('uploaded_file', filename=f.file_path) }}" target="_blank"
+                 class="text-blue-600 hover:underline">عرض الملف</a>
+            {% else %}
+              <span class="text-gray-400">لا يوجد</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-500">{{ f.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="px-4 py-3">
+            <a href="{{ url_for('feedback_details', id=f.id) }}"
+               class="bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 text-sm">
+              عرض التفاصيل
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-gray-400 py-6">لا توجد طلبات بعد.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ترقيم الصفحات -->
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-center mt-6 gap-1 text-sm">
+    <!-- السابق -->
+    {% if current_page > 1 %}
+      <a href="{{ url_for('feedbacks', page=current_page-1) }}"
+         class="px-4 py-2 rounded bg-white border hover:bg-gray-100">السابق</a>
+    {% else %}
+      <span class="px-4 py-2 rounded bg-gray-100 text-gray-400 cursor-not-allowed">السابق</span>
+    {% endif %}
+
+    <!-- الأرقام -->
+    {% for i in range(1, total_pages + 1) %}
+      <a href="{{ url_for('feedbacks', page=i) }}"
+         class="px-4 py-2 rounded
+         {% if i == current_page %}
+           bg-blue-600 text-white
+         {% else %}
+           bg-white border hover:bg-blue-50
+         {% endif %}">
+        {{ i }}
+      </a>
+    {% endfor %}
+
+    <!-- التالي -->
+    {% if current_page < total_pages %}
+      <a href="{{ url_for('feedbacks', page=current_page+1) }}"
+         class="px-4 py-2 rounded bg-white border hover:bg-gray-100">التالي</a>
+    {% else %}
+      <span class="px-4 py-2 rounded bg-gray-100 text-gray-400 cursor-not-allowed">التالي</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

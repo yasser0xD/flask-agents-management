@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+{% block title %}إضافة عرض{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 mt-6 rounded-2xl shadow-md border border-inputBorder text-right">
+
+  <h2 class="text-2xl font-bold text-primary mb-6 text-center">إضافة عرض جديد</h2>
+
+  <form method="POST" enctype="multipart/form-data" class="space-y-6">
+
+    <!-- عنوان العرض -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-dark">عنوان العرض</label>
+      <input type="text" name="title" required
+             class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary focus:outline-none">
+    </div>
+
+    <!-- وصف العرض -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-dark">وصف العرض</label>
+      <textarea name="description" rows="4"
+                class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary resize-y"></textarea>
+    </div>
+
+    <!-- المدة والسعر -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="block mb-1 text-sm font-medium text-dark">المدة</label>
+        <input type="text" name="duration" placeholder="مثلاً: 7 أيام"
+               class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary">
+      </div>
+      <div>
+        <label class="block mb-1 text-sm font-medium text-dark">السعر (ابتداءً من)</label>
+        <input type="text" name="price" placeholder="مثلاً: 120,000 DZD"
+               class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary">
+      </div>
+    </div>
+
+    <!-- تاريخ الانتهاء -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-dark">تاريخ انتهاء العرض</label>
+      <input type="date" name="expires_at"
+             class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary">
+    </div>
+
+    <!-- صورة العرض -->
+    <div>
+      <label class="block mb-1 text-sm font-medium text-dark">صورة العرض</label>
+      <input type="file" name="image" accept="image/*"
+             class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:font-semibold file:bg-accent file:text-primary hover:file:bg-primary/10">
+    </div>
+<div>
+    <label>صور تفصيلية إضافية</label>
+    <input type="file" name="extra_images" accept="image/*" multiple>
+  </div>
+    <!-- زر الإرسال -->
+    <div class="pt-2">
+      <button type="submit"
+              class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-2 rounded-xl shadow transition">
+        إضافة العرض
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

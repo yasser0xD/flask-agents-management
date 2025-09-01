@@ -1,0 +1,32 @@
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Flask sessions
+flask_session/
+
+# Virtual environments
+venv/
+env/
+
+# Uploads (بيانات العملاء)
+uploads/
+static/uploads/
+
+# Local static files
+static/offers/
+static/icons/
+static/flags/
+static/logo.png
+static/Cairo-VariableFont_slnt,wght.ttf
+
+# Environment files
+.env
+
+# Backup and local files
+backup.sql
+code.txt
+*.bat
+*.txt

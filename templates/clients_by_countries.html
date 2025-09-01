@@ -1,0 +1,332 @@
+{% extends "layout.html" %}
+{% block title %}العملاء في {{ countries.name }}{% endblock %}
+
+{% block content %}
+
+<div class="container mx-auto px-4 py-6">
+   
+
+   <div class="flex items-center gap-2">
+  <img src="{{ url_for('static', filename='flag/' ~ countries.flag_filename) }}"
+       alt="علم {{ countries.name }}"
+       class="w-8 h-5 object-contain rounded border" />
+  <span class="font-semibold text-lg">{{ countries.name }}</span>
+</div>
+
+     
+
+
+  <!-- Modal الحذف -->
+    <div class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50" id="deleteModal">
+        <div class="bg-white rounded-lg shadow-md p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold text-red-600 mb-4">تأكيد الحذف</h3>
+            <p class="text-gray-700 mb-4">
+                هل أنت متأكد أنك تريد حذف <span class="font-semibold text-red-700" id="clientNameToDelete"></span>؟<br>
+                <small class="text-gray-500">هذا الإجراء لا يمكن التراجع عنه.</small>
+            </p>
+            <div class="flex justify-end gap-2">
+                <button onclick="toggleModal(false)" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">إلغاء</button>
+                <button id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">نعم، احذف</button>
+            </div>
+        </div>
+    </div>
+
+    {% if clients %}
+    <!-- 🔍 البحث + ↕️ الترتيب -->
+<form method="get" class="mb-6 flex flex-wrap items-center justify-between gap-4">
+
+  <!-- 🔍 مربع البحث -->
+  <div class="flex-1">
+    <input type="text" name="search" placeholder="🔍 بحث بالاسم"
+           value="{{ search }}" 
+           class="w-full px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-primary">
+  </div>
+
+  <!-- ⬇️ اختيار طريقة الترتيب -->
+  <div>
+    <select name="sort_by" onchange="this.form.submit()"
+            class="px-4 py-2 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-primary">
+      <option value="">الترتيب حسب ...</option>
+      <option value="visa_type_asc" {% if sort_by == 'visa_type_asc' %}selected{% endif %}>نوع الفيزا</option>
+      <option value="client_type_asc" {% if sort_by == 'client_type_asc' %}selected{% endif %}>نوع العميل</option>
+      <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>أقرب تاريخ دفع</option>
+      <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>أبعد تاريخ دفع</option>
+    </select>
+  </div>
+
+</form>
+
+    <!-- 📊 عدد العملاء -->
+   <div class="mb-4">
+  <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-800 px-4 py-2 rounded-lg shadow-sm text-sm">
+    👥 عدد العملاء: <span class="font-bold">{{ total_clients }}</span>
+  </div>
+</div>
+
+   <!--  جدول العملاء-    -->
+<div class="overflow-x-auto rounded-lg shadow ring-1 ring-gray-200">
+    <table class="min-w-full divide-y divide-gray-200 text-right text-sm">
+        <thead class="bg-gray-50 text-gray-700 text-sm font-semibold sticky top-0 z-10">
+            <tr>
+                <th class="px-5 py-3">👤 الاسم</th>
+                <th class="px-5 py-3">👥 نوع العميل</th>
+                <th class="px-5 py-3">🎫 نوع الفيزا</th>
+                <th class="px-5 py-3">💼 تاريخ دفع الملف</th>
+                <th class="px-5 py-3">💰 الحالة المالية</th>
+                <th class="px-5 py-3">⚙️ الإجراءات</th>
+            </tr>
+        </thead>
+        
+        <tbody class="bg-white divide-y divide-gray-100">
+            {% for client in clients %}
+                {% set highlight = '' %}
+                {% if client.file_payment_date %}
+                    {% set days_left = (client.file_payment_date - current_date).days %}
+                    {% if days_left <= 5 %}
+                        {% set highlight = 'bg-red-50' %}
+                    {% elif days_left <= 10 %}
+                        {% set highlight = 'bg-yellow-50' %}
+                    {% endif %}
+                {% endif %}
+                <tr id="client-{{ client.id }}" class="hover:bg-gray-50 transition {{ highlight }}">
+                    <!-- الاسم: لقب العائلة إذا عائلي -->
+                    <td class="px-5 py-3 text-lg font-xl text-gray-800 whitespace-nowrap">
+    {{ client.full_name | upper }}
+</td>
+
+
+                    <!-- نوع العميل -->
+                    <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
+                        {{ 'عائلي' if client.client_type == 'family' else 'فردي' }}
+                    </td>
+
+                    <!-- نوع الفيزا -->
+                    <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
+                        {{ client.visa_type or 'غير محدد' }}
+                    </td>
+
+                    <!-- تاريخ دفع الملف -->
+                    <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
+                        {{ client.file_payment_date.strftime('%Y-%m-%d') if client.file_payment_date else 'غير متوفر' }}
+                    </td>
+
+                    <!-- الحالة المالية -->
+                    <td class="px-5 py-3 font-semibold whitespace-nowrap">
+                        {% if client.amount_paid >= client.amount_due %}
+                            <span class="text-green-600 bg-green-50 px-2 py-1 rounded-full text-xs font-medium">تم الدفع</span>
+                        {% else %}
+                            <span class="text-red-600 bg-red-50 px-2 py-1 rounded-full text-xs font-medium" title="المدفوع: {{ client.amount_paid }} / المستحق: {{ client.amount_due }}">
+                                غير مدفوع
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- الإجراءات -->
+                    <td class="px-5 py-3 space-x-2 space-x-reverse whitespace-nowrap">
+                        <a href="{{ url_for('client_details', client_id=client.id) }}"
+                           class="inline-block text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded text-sm font-medium">
+                            عرض
+                        </a>
+                        <button class="delete-btn inline-block text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded text-sm font-medium"
+                                data-client-id="{{ client.id }}"
+                                data-client-name="{{ client.full_name }}">
+                            🗑 حذف
+                        </button>
+
+                         <button class="bg-green-500 text-white px-3 py-1 rounded"
+                             onclick="openSendModal({{ client.id }}, '{{ client.full_name }}')">
+                            إرسال  
+                        </button>
+
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <!-- 📄 الترقيم -->
+    {% if total_pages > 1 %}
+    <div class="flex flex-wrap items-center justify-between mt-6">
+        <a href="{{ url_for('countries') }}"
+           class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded">← عودة إلى البلدان</a>
+
+        <div class="flex gap-1 mt-4 sm:mt-0">
+            {% if current_page > 1 %}
+            <a href="{{ url_for('clients_by_countries', country_id=country_id, page=current_page-1, search=search, sort_by=sort_by) }}"
+               class="px-3 py-2 rounded bg-white hover:bg-blue-100 text-gray-700">السابق</a>
+            {% endif %}
+
+            {% for i in range(1, total_pages + 1) %}
+            <a href="{{ url_for('clients_by_countries', country_id=country_id, page=i, search=search, sort_by=sort_by) }}"
+               class="px-3 py-2 rounded {{ 'bg-blue-500 text-white' if i == current_page else 'bg-white hover:bg-blue-100 text-gray-700' }}">
+                {{ i }}
+            </a>
+            {% endfor %}
+
+            {% if current_page < total_pages %}
+            <a href="{{ url_for('clients_by_countries', country_id=country_id, page=current_page+1, search=search, sort_by=sort_by) }}"
+               class="px-3 py-2 rounded bg-white hover:bg-blue-100 text-gray-700">التالي</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+        <p class="text-center text-gray-500 mt-6">لا يوجد عملاء مرتبطين بهذا البلد.</p>
+        <div class="mt-4">
+            <a href="{{ url_for('countries') }}"
+               class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded">← عودة إلى قائمة البلدان</a>
+        </div>
+    {% endif %}
+</div>
+
+
+<!-- المودال -->
+<div id="sendModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white p-6 rounded shadow-lg w-96 relative z-60">
+        <h2 class="text-lg font-bold mb-4">إرسال إلى الوسيط</h2>
+        
+        <form id="sendToAgentForm" method="post" action="{{ url_for('send_to_agent') }}">
+            <input type="hidden" name="client_id" id="modalClientId">
+            
+            <!-- اختيار الوسيط -->
+            <p class="mb-2 font-semibold">اختر الوسيط:</p>
+            <select name="agent_id" class="w-full border p-2 rounded mb-4" required>
+                <option value="">-- اختر --</option>
+                {% for agent in agents %}
+                    <option value="{{ agent.id }}">{{ agent.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <!-- تعليق -->
+            <p class="mb-2 font-semibold">تعليق:</p>
+            <textarea name="comment" class="w-full border p-2 rounded mb-4" rows="3"></textarea>
+            
+            <!-- أزرار التحكم -->
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeSendModal()" class="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">إرسال</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- شاشة التحميل -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-[999] flex items-center justify-center">
+    <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+</div>
+
+
+
+
+<script>
+
+ // إظهار المودال
+    function openSendModal(clientId, clientName) {
+        document.getElementById("modalClientId").value = clientId;
+        document.getElementById("sendModal").classList.remove("hidden");
+    }
+
+    // إغلاق المودال
+    function closeSendModal() {
+        document.getElementById("sendModal").classList.add("hidden");
+    }
+
+    // عند الإرسال، أظهر شاشة التحميل
+    document.getElementById("sendToAgentForm").addEventListener("submit", function() {
+        closeSendModal(); // إغلاق المودال
+        document.getElementById("loadingOverlay").classList.remove("hidden"); // إظهار التحميل
+    });
+
+
+
+    function openSendModal(clientId, clientName) {
+    document.getElementById('modalClientId').value = clientId;
+    document.getElementById('sendModal').classList.remove('hidden');
+    document.getElementById('sendModal').classList.add('flex');
+}
+
+function closeSendModal() {
+    document.getElementById('sendModal').classList.add('hidden');
+    document.getElementById('sendModal').classList.remove('flex');
+}
+
+
+
+let selectedClientId = null;
+
+function toggleModal(show) {
+    const modal = document.getElementById('deleteModal');
+    if (show) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        selectedClientId = null;
+    }
+}
+
+document.querySelectorAll('.delete-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        selectedClientId = this.dataset.clientId;
+        const clientName = this.dataset.clientName;
+        document.getElementById('clientNameToDelete').textContent = clientName;
+        toggleModal(true);
+    });
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+    if (!selectedClientId) return;
+
+    const deleteBtn = this;
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'جاري الحذف...';
+
+    fetch(`/delete-client/${selectedClientId}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const clientRow = document.getElementById(`client-${selectedClientId}`);
+            if (clientRow) clientRow.remove();
+            toggleModal(false);
+
+            // إشعار الحذف
+            const toast = document.createElement('div');
+            toast.textContent = 'تم حذف العميل بنجاح';
+            toast.className = 'fixed bottom-6 right-6 bg-green-600 text-white px-4 py-2 rounded shadow-lg';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        } else {
+            alert('فشل في الحذف');
+        }
+    })
+    .catch(error => {
+        alert('حدث خطأ أثناء الحذف');
+        console.error(error);
+    })
+    .finally(() => {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = 'نعم، احذف';
+    });
+});
+
+
+
+document.getElementById("sendToAgentForm").addEventListener("submit", function() {
+    // Show loading overlay
+    document.getElementById("loadingOverlay").classList.remove("hidden");
+});
+
+
+</script>
+
+
+
+{% endblock %}

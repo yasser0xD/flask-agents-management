@@ -1,0 +1,229 @@
+{% extends "layout.html" %}
+
+{% block title %}إضافة عميل{% endblock %}
+{% block header %}إضافة عميل جديد{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-md border border-inputBorder p-6 sm:p-8 mt-6 space-y-8 text-right">
+
+  <form method="POST" enctype="multipart/form-data" id="multiStepForm" class="space-y-8">
+    <!-- الخطوة 1 -->
+    <div id="step1">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- نوع الفيزا -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">نوع الفيزا</label>
+          <select name="visa_type"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"
+            required>
+            <option value="سياحية">سياحية</option>
+            <option value="عمل">عمل</option>
+            <option value="دراسية">دراسية</option>
+          </select>
+        </div>
+
+        <!-- نوع العميل -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">نوع العميل</label>
+          <select name="client_type" id="clientType"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary">
+            <option value="individual">فردي</option>
+            <option value="family">عائلي</option>
+          </select>
+        </div>
+
+         <!-- الدولة -->
+        <div class="md:col-span-2">
+          <label class="block mb-1 text-sm font-medium text-dark">الدولة</label>
+          <select name="country_id"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"
+            required>
+            {% for country in countries %}
+            <option value="{{ country.id }}">{{ country.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- الاسم الكامل -->
+        <div class="md:col-span-2">
+          <label class="block mb-1 text-sm font-medium text-dark">الاسم الكامل <span id="fullNameLabelNote" class="text-xs text-gray-500">(في حال العائلي، اكتب اسم المتكفل)</span></label>
+          <input type="text" name="full_name"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"
+            required />
+        </div>
+
+        <!-- قسم أفراد العائلة -->
+        <div id="familyMembersContainer" class="hidden md:col-span-2">
+          <h3 class="text-md font-bold mb-4">أفراد العائلة</h3>
+          <div id="membersList" class="space-y-4"></div>
+          <button type="button" id="addMemberBtn"
+            class="mt-2 px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition">إضافة
+            فرد</button>
+        </div>
+
+        <!-- البريد الإلكتروني -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">البريد الإلكتروني</label>
+          <input type="email" name="email"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary" />
+        </div>
+
+        <!-- رقم الهاتف -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">رقم الهاتف</label>
+          <input type="text" name="phone"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary" />
+        </div>
+
+
+      </div>
+
+      <!-- التالي -->
+      <div class="flex justify-end mt-4">
+        <button type="button" id="nextStep"
+          class="bg-primary text-white px-6 py-2 rounded-xl hover:bg-primaryDark transition">التالي</button>
+      </div>
+    </div>
+
+    <!-- الخطوة 2 -->
+    <div id="step2" class="hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- المبلغ الإجمالي -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">المبلغ الإجمالي</label>
+          <input type="number" name="amount_due" step="1000" value="0"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"
+            required />
+        </div>
+
+        <!-- المبلغ المدفوع -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">المبلغ المدفوع</label>
+          <input type="number" name="amount_paid" step="1000" value="0" id="amountPaid"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"
+            required />
+          <div class="flex items-center mt-2">
+            <input type="checkbox" id="fullyPaid" class="mr-2">
+            <label for="fullyPaid" class="text-sm text-dark">تم الدفع كاملاً</label>
+          </div>
+        </div>
+
+        <!-- الربح -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">الربح</label>
+          <input type="number" name="profit_amount" step="1000" value="0"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary" />
+        </div>
+
+        <!-- تاريخ دفع الملف -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-dark">تاريخ دفع الملف</label>
+          <input type="date" name="file_payment_date"
+            class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary" />
+        </div>
+      </div>
+
+      <!-- ملاحظات -->
+      <div class="mt-4">
+        <label class="block mb-1 text-sm font-medium text-dark">ملاحظات</label>
+        <textarea name="comments" rows="4"
+          class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-neutral focus:ring-2 focus:ring-primary"></textarea>
+      </div>
+
+      <!-- مستندات -->
+      <div class="mt-4">
+        <label class="block mb-1 text-sm font-medium text-dark">رفع مستندات</label>
+        <input type="file" name="documents" multiple
+          class="w-full px-4 py-2 border border-inputBorder rounded-xl bg-white" />
+      </div>
+
+      <!-- زر الحفظ -->
+      <div class="flex justify-between mt-6">
+        <button type="button" id="prevStep"
+          class="bg-gray-400 text-white px-6 py-2 rounded-xl hover:bg-gray-500 transition">السابق</button>
+        <button type="submit"
+          class="bg-primary text-white px-6 py-2 rounded-xl hover:bg-primaryDark transition">حفظ</button>
+      </div>
+    </div>
+  </form>
+
+</div>
+
+<!-- JS Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const clientTypeSelect = document.getElementById('clientType');
+    const familyMembersContainer = document.getElementById('familyMembersContainer');
+    const membersList = document.getElementById('membersList');
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    const fullNameLabel = document.querySelector('label[for="full_name"]') || document.querySelector('label:has(+ input[name="full_name"])');
+
+    const fullyPaidCheckbox = document.getElementById('fullyPaid');
+    const amountPaidInput = document.getElementById('amountPaid');
+
+    // ⚙️ عرض أو إخفاء قسم أفراد العائلة بناءً على نوع العميل
+    clientTypeSelect.addEventListener('change', function () {
+      const type = this.value;
+      if (type === 'family') {
+        familyMembersContainer.classList.remove('hidden');
+        if (fullNameLabel) {
+          fullNameLabel.innerHTML = 'الاسم الكامل <span class="text-sm text-gray-500">(اسم المتكفل)</span>';
+        }
+      } else {
+        familyMembersContainer.classList.add('hidden');
+        membersList.innerHTML = ''; // إعادة تعيين الأفراد
+        if (fullNameLabel) {
+          fullNameLabel.textContent = 'الاسم الكامل';
+        }
+      }
+    });
+
+// ✅ إضافة فرد جديد (بدون مبلغ)
+addMemberBtn.addEventListener('click', function () {
+  const memberIndex = membersList.children.length;
+  const memberDiv = document.createElement('div');
+  memberDiv.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-100 p-4 rounded-xl';
+
+  memberDiv.innerHTML = `
+    <div>
+      <label class="block mb-1 text-sm font-medium text-dark">اسم الفرد</label>
+      <input type="text" name="member_full_name[]" required
+        class="w-full px-4 py-2 rounded-xl border border-inputBorder bg-white focus:ring-2 focus:ring-primary" />
+    </div>
+
+    <div class="flex items-center mt-6">
+      <input type="checkbox" name="member_is_child[]" value="true" id="child-${memberIndex}" class="mr-2">
+      <label for="child-${memberIndex}" class="text-sm text-dark"> قاصر (طفل) </label>
+    </div>
+  `;
+
+  membersList.appendChild(memberDiv);
+});
+
+    // ✅ منطق "تم الدفع كاملاً"
+    fullyPaidCheckbox.addEventListener('change', function () {
+      if (this.checked) {
+        amountPaidInput.value = document.querySelector('input[name="amount_due"]').value || 0;
+      }
+    });
+
+    // ✅ التنقل بين الخطوات
+    document.getElementById('nextStep').addEventListener('click', function () {
+      document.getElementById('step1').classList.add('hidden');
+      document.getElementById('step2').classList.remove('hidden');
+    });
+
+    document.getElementById('prevStep').addEventListener('click', function () {
+      document.getElementById('step2').classList.add('hidden');
+      document.getElementById('step1').classList.remove('hidden');
+    });
+  });
+</script>
+
+
+
+{% endblock %}

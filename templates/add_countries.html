@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}إضافة بلد{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow border border-inputBorder text-right">
+
+    <h2 class="text-2xl font-bold text-primary mb-6">إضافة بلد جديد</h2>
+
+    {% if message %}
+        <div class="bg-accent text-dark border border-primary/30 p-3 rounded mb-4 text-sm text-center">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <form action="{{ url_for('add_countries') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+
+        <!-- اسم البلد -->
+        <div>
+            <label for="name" class="block mb-1 text-dark font-medium">اسم البلد</label>
+            <input type="text" name="name" id="name"
+                   class="w-full border border-inputBorder rounded-xl p-2 text-dark bg-neutral focus:ring-2 focus:ring-primary focus:outline-none uppercase"
+                   placeholder="مثال: الجزائر" required
+                   oninput="this.value = this.value.toUpperCase();">
+        </div>
+
+        <!-- علم البلد -->
+        <div>
+            <label for="flag" class="block mb-1 text-dark font-medium">صورة العلم</label>
+            <input type="file" name="flag" accept="image/png, image/jpeg"
+                   class="block w-full text-sm text-dark file:mr-4 file:py-2 file:px-4
+                   file:rounded-xl file:border-0 file:font-semibold
+                   file:bg-accent file:text-primary hover:file:bg-primary/10" required>
+        </div>
+
+        <!-- أزرار -->
+        <div class="flex justify-between items-center pt-4">
+            <a href="{{ url_for('countries') }}"
+               class="text-sm text-dark hover:text-primary font-medium transition">⬅ العودة</a>
+
+            <button type="submit"
+                    class="bg-primary hover:bg-primary/90 text-white py-2 px-6 rounded-xl font-bold shadow transition">
+                إضافة
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

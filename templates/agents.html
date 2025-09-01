@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}إدارة الوسطاء{% endblock %}
+{% block content %}
+<div class="p-6">
+  <h2 class="text-xl font-bold mb-4">قائمة الوسطاء</h2>
+
+  <!-- نموذج إضافة وسيط -->
+  <form action="{{ url_for('add_agent') }}" method="POST" class="mb-6 flex gap-2">
+    <input type="text" name="name" placeholder="اسم الوسيط" required class="border p-2 rounded">
+    <input type="email" name="email" placeholder="البريد الإلكتروني" required class="border p-2 rounded">
+    <select name="country_id" class="border p-2 rounded">
+      <option value="">اختر الدولة</option>
+      {% for country in countries %}
+      <option value="{{ country.id }}">{{ country.name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">إضافة</button>
+  </form>
+
+  <!-- جدول الوسطاء -->
+  <table class="w-full border text-right">
+    <thead>
+      <tr class="bg-gray-100">
+        <th class="p-2">#</th>
+        <th class="p-2">الاسم</th>
+        <th class="p-2">البريد الإلكتروني</th>
+        <th class="p-2">الدولة</th>
+        <th class="p-2">إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for agent in agents %}
+      <tr class="border-t">
+        <td class="p-2">{{ agent.id }}</td>
+        <td class="p-2">{{ agent.name }}</td>
+        <td class="p-2">{{ agent.email }}</td>
+        <td class="p-2">
+          {% if agent.country_name %}
+            <img src="{{ url_for('static', filename='flags/' ~ agent.flag_filename) }}" class="inline w-5 h-4">
+            {{ agent.country_name }}
+          {% else %}
+            غير محدد
+          {% endif %}
+        </td>
+        <td class="p-2">
+  <form action="{{ url_for('delete_agent', agent_id=agent.id) }}" method="POST" style="display:inline;">
+    <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded" 
+            onclick="return confirm('هل أنت متأكد من الحذف؟')">حذف</button>
+  </form>
+</td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
