@@ -40,48 +40,45 @@ The system makes it easy to register clients, upload their files, assign them to
 ├── .gitignore
 ├── LICENSE
 └── README.md
-
-
-⚙️ Installation
-
+```
+## ⚙️ Installation
 Clone the repository
-
+```text
 git clone https://github.com/your-username/flask-agents-management.git
 cd flask-agents-management
-
-
+```
 Create and activate a virtual environment
-
-python -m venv venv
+```text
+ython -m venv venv
 source venv/bin/activate   # On Linux/Mac
 venv\Scripts\activate      # On Windows
-
-
+```
 Install dependencies
-
+```text
 pip install -r requirements.txt
-
+```
 
 Set up environment variables
 Create a .env file (use config.example.env as a template):
-
+```text
 FLASK_APP=run_app.py
 FLASK_ENV=development
 SECRET_KEY=your-secret-key
 MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
-
+```
 
 Initialize the database
-
+```text
 sqlite3 database.db < backup.sql
-
+```
 
 Run the app
+```text
+python run_app.py```
+```
 
-python run_app.py
-
-🚀 Usage
+## 🚀 Usage
 
 Log in with your credentials.
 
@@ -93,21 +90,42 @@ Register clients and upload documents.
 
 Send client data & files to assigned agents via email.
 
-📸 Screenshots
+## 📸 Screenshots
 
-(Add screenshots or demo GIFs here for better presentation, e.g. dashboard, client form, email example)
+### Login Page
+![Login Page](screenshots/log.png)
 
-📜 License
+### Dashboard
+![Dashboard](screenshots/dash01.png)
+
+### Others
+![Countries](screenshots/count.png)
+![clients](screenshots/count01.png)
+![Details](screenshots/detail.png)
+
+
+
+
+## 📜 License
 
 This project is licensed under the MIT License – see the LICENSE
  file for details.
 
-🤝 Contributing
+## 🤝 Contributing
 
 Pull requests are welcome!
 For major changes, please open an issue first to discuss what you would like to change.
 
-👨‍💻 Author
+## 👨‍💻 Author
 
 Developed by Yasser Debihi
 Feel free to reach out for suggestions or collaboration.
+
+
+
+
+
+
+
+
+
